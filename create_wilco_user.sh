@@ -7,7 +7,7 @@ DISPLAY_NAME="Wilco checks"
 PROJECT_ID=$(gcloud config get-value project)
 ROLE="roles/owner"
 KEY_FILE_PATH="/tmp/wilco_creds.json"
-
+STORAGE_ROLE="roles/storage.admin"
 
 echo "Creating the service account"
 gcloud iam service-accounts create $SERVICE_ACCOUNT_NAME \
@@ -23,7 +23,13 @@ echo "Generating the key file for the service account"
 gcloud iam service-accounts keys create $KEY_FILE_PATH \
   --iam-account "${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
 
-gcloud services enable dataflow.googleapis.com
+echo "Assigning Storage Admin role to the service account"
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:${SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
+  --role="$STORAGE_ROLE"
+
+gcloud services enable storage.googleapis.com
+gcloud services enable sqladmin.googleapis.com
 
 credentials="`cat $KEY_FILE_PATH`"
 stringified_credentials="$(echo "$credentials" | jq -R -s .)"
